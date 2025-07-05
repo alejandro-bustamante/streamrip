@@ -5,6 +5,8 @@ import platform
 
 import aiofiles
 
+import sys
+
 from .. import db
 from ..client import Client, DeezerClient, QobuzClient, SoundcloudClient, TidalClient
 from ..config import Config
@@ -266,6 +268,32 @@ class Main:
         console.print(
             f"Wrote [purple]{len(search_results.results)}[/purple] results to [cyan]{filepath} as JSON!"
         )
+
+    async def search_output_stdout(
+        self, source: str, media_type: str, query: str, limit: int
+    ):
+        """
+        Search for content and write results to standard output as JSON.
+        This function is designed to output only JSON to stdout,
+        making it suitable for piping to other processes.
+        """
+        client = await self.get_logged_in_client(source)
+
+        logger.debug(f"Searching {source} for {media_type} '{query}' with limit {limit}")
+
+        pages = await client.search(media_type, query, limit=limit)
+
+        if len(pages) == 0:
+            sys.stderr.write(f"No search results found for query {query}\n")
+            json.dump([], sys.stdout)
+            sys.stdout.write("\n")
+            return
+
+        search_results = SearchResults.from_pages(source, media_type, pages)
+
+        json.dump(search_results.as_list(source), sys.stdout, ensure_ascii=False)
+        sys.stdout.write("\n")
+        logger.debug(f"Wrote {len(search_results.results)} results to stdout as JSON.")
 
     async def resolve_lastfm(self, playlist_url: str):
         """Resolve a last.fm playlist."""

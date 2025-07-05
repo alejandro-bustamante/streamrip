@@ -68,6 +68,7 @@ class TrackSummary(Summary):
     name: str
     artist: str
     date_released: str | None
+    raw: dict
 
     def media_type(self):
         return "track"
@@ -105,7 +106,7 @@ class TrackSummary(Summary):
             or item.get("year")
             or "Unknown"
         )
-        return cls(id, name.strip(), artist, date_released)  # type: ignore
+        return cls(id, name.strip(), artist, date_released, raw=item)  # type: ignore
 
 
 @dataclass(slots=True)
@@ -288,6 +289,7 @@ class SearchResults:
                 "media_type": i.media_type(),
                 "id": i.id,
                 "desc": i.summarize(),
+                "data": i.raw,
             }
             for i in self.results
         ]

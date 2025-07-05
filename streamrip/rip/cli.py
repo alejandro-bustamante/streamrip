@@ -375,6 +375,12 @@ def database_browse(ctx, table):
     type=click.Path(writable=True),
 )
 @click.option(
+    "-s",
+    "--stdout",
+    help="Write search results to standard output as JSON, suitable for piping.",
+    is_flag=True,
+)
+@click.option(
     "-n",
     "--num-results",
     help="Maximum number of search results to show",
@@ -386,13 +392,16 @@ def database_browse(ctx, table):
 @click.argument("query", required=True)
 @click.pass_context
 @coro
-async def search(ctx, first, output_file, num_results, source, media_type, query):
+async def search(ctx, first, output_file, stdout, num_results, source, media_type, query):
     """Search for content using a specific source.
 
     Example:
 
         rip search qobuz album 'rumours'
     """
+    if (first and output_file) or (first and stdout) or (output_file and stdout): # Modified logic for mutual exclusivity
+        console.print("Cannot choose --first, --output-file, or --stdout simultaneously!")
+        return
     if first and output_file:
         console.print("Cannot choose --first and --output-file!")
         return
@@ -403,6 +412,10 @@ async def search(ctx, first, output_file, num_results, source, media_type, query
             elif output_file:
                 await main.search_output_file(
                     source, media_type, query, output_file, num_results
+                )
+            elif stdout:
+                await main.search_output_stdout(
+                    source, media_type, query, num_results
                 )
             else:
                 await main.search_interactive(source, media_type, query)
@@ -434,12 +447,19 @@ async def lastfm(ctx, source, fallback_source, url):
 
 
 @rip.command()
+@click.option(
+    "-p",
+    "--print-path",
+    help="Print the path of the downloaded file to the standard output",
+    default=False,
+    is_flag=True,
+)
 @click.argument("source")
 @click.argument("media-type")
 @click.argument("id")
 @click.pass_context
 @coro
-async def id(ctx, source, media_type, id):
+async def id(ctx, print_path, source, media_type, id):
     """Download an item by ID."""
     with ctx.obj["config"] as cfg:
         async with Main(cfg) as main:

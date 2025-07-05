@@ -3,6 +3,11 @@ import logging
 import os
 from dataclasses import dataclass
 
+# --- To print the download paht ---
+import json
+import sys
+# ----------------------------------
+
 from .. import converter
 from ..client import Client, Downloadable
 from ..config import Config
@@ -72,6 +77,7 @@ class Track(Media):
                         self.downloadable.source, "track", self.meta.info.id
                     )
 
+
     async def postprocess(self):
         if self.is_single:
             remove_title(self.meta.title)
@@ -81,6 +87,11 @@ class Track(Media):
             await self._convert()
 
         self.db.set_downloaded(self.meta.info.id)
+        # Print the download path in json format to the std out
+        payload = {"downloadPath": self.download_path}
+        sys.stdout.write("\n ---BEGIN JSON---\n")
+        sys.stdout.write(json.dumps(payload))
+        sys.stdout.write("\n---END JSON---\n")
 
     async def _convert(self):
         c = self.config.session.conversion

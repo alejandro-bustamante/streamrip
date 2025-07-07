@@ -69,7 +69,10 @@ class DatabaseBase(DatabaseInterface):
         self.path = path
 
         if not os.path.exists(self.path):
-            self.create()
+            pass
+            # Bypass the db creation
+            # Streamrip will fail if you dont use the --no-db flag
+            # self.create()
 
     def create(self):
         """Create a database."""
